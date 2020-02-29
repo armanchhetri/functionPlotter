@@ -144,7 +144,7 @@ void generate()
 		for (int j = -sampleSize; j < sampleSize; j++) {
 			graph1[index].x = i;
 			graph1[index].z = j;
-			graph1[index].y = (i*i-j*j) ;
+			graph1[index].y = (i*i+j*j) ;
 
 			index++;
 		}
@@ -155,7 +155,7 @@ void generate()
 		for (int j = -sampleSize; j < sampleSize; j++) {
 			graph2[index].x = j;
 			graph2[index].z = i;
-			graph2[index].y = (i*i -j * j);
+			graph2[index].y = (i*i +j * j);
 
 			index++;
 		}
