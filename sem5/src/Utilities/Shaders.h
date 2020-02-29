@@ -114,6 +114,11 @@ public:
 		glUniformMatrix4fv(modelloc, 1, GL_FALSE, glm::value_ptr(value));
 	}
 
+	void setVec3(const std::string &name, glm::vec3 &value) const {
+		unsigned int modelloc = glGetUniformLocation(ID, name.c_str());
+		glUniform3fv(modelloc, 1,&value[0]);
+	}
+
 
 
 };
