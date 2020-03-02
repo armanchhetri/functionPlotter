@@ -17,7 +17,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "Utilities/stb_image.h"
 
-#define N 5400
+#define N 9126
+#define PI 3.1415
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -48,7 +49,7 @@ void OpenGLDebugCallback(
 float mixval = 0.2;
 float delTime = 0.0f;
 float lastFrame = 0.0f;
-glm::vec3 lightPos(1.0f, 0.0f, 1.0f);
+glm::vec3 lightPos(10.0f, 10.0f, -10.0f);
 
 
 //glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0f);
@@ -56,17 +57,34 @@ glm::vec3 lightPos(1.0f, 0.0f, 1.0f);
 //glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0f);
 
 int graphSize = 20;
-int sampleSize = 15;
+int sampleSize = 20;
 struct points {
 	float x, y, z;
+public:
+	points operator -(points a) {
+		points temp;
+		temp.x = x - a.x;
+		temp.y = y - a.y;
+		temp.z = z - a.z;
+		return temp;
+
+	}
+	points operator +(points a) {
+		points temp;
+		temp.x = x + a.x;
+		temp.y = y + a.y;
+		temp.z = z + a.z;
+		return temp;
+
+	}
 };
 //{12, 13, 30, 13, 31, 30, 13, 14, 31, 14, 32, 31, 14, 15, 32, 15, 33, 32}
-
-points axis[6], axisMarks[600], graph1[1800], graph2[400], graph1Tri[400];
-int triNum = (sampleSize*2-1) *6* 2*sampleSize;
+//normals = N/3
+points axis[6], axisMarks[600], graph1[1800], graph2[400],normals[3042];
+int triNum = (sampleSize*2) *6* 2*sampleSize;
 //unsigned int* g1index = new unsigned int[triNum];
-unsigned int g1index[N] = { 0};
-unsigned int bufferAxis, bufferMarks, bufferGraph1, bufferGraph2, g1buffer,g1Ibuffer,vertexArray;
+unsigned int g1index[N] = { 0}, wireframe[N] = { 0 };
+unsigned int bufferAxis, bufferMarks, bufferGraph1, bufferGraph2, wireframeBuffer,g1Ibuffer,vertexArray,normalBuffer;
 
 void generate()
 {
@@ -143,24 +161,56 @@ void generate()
 
 	index = 0;
 	float x, y;
-	for (int i = -sampleSize,x=-6.0; i < sampleSize; i++, x += 0.4) {
-		for (int j = -sampleSize,y=-6.0; j < sampleSize; j++,y+=0.4) {
-			graph1[index].x = x;
-			graph1[index].z = y;
+	for (int i = -sampleSize,x=-PI; i < sampleSize; i++, x += 0.209) {
+		for (int j = -sampleSize,y= -PI; j < sampleSize; j++,y+= 0.1047) {
+			/*graph1[index].x = 4*cos(x)*sin(y);
+			graph1[index].z = 4*sin(x)*sin(y);*/
+			//graph1[index].x = 4 * cos(x);
+			//graph1[index].z = 4 * sin(x);
 			//graph1[index].y = sin(i*i +  j*j);
-			//graph1[index].y = (i +  j)*0.5;
-			graph1[index].y = sqrt(81-x*x - y * y);
+
+			graph1[index].x = i*0.3;
+			graph1[index].z =j*0.3;
+			float d = sqrt  (i*i + j * j);
+			if (d == 0.0)
+				d = 1;
+
+			//graph1[index].y = (sin(d) / d)*10;
+			//graph1[index].y = sin(5*i)*cos(5*j)/3;
+			float tem = (i*i + j * j);
+			/*if (tem == 0) {
+				tem = 1;
+			}*/
+			//graph1[index].y = 10 - abs(j);
+			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
+
+			//graph1[index].y = (i + j)*0.2;
+			//graph1[index].y = tem*0.05;
+			//graph1[index].y = pow(tem , 0.5);
+			graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
+
 			index++;
 		}
 	}
 
 	for (int i = -sampleSize, x = -6.0; i < sampleSize; i++, x += 0.4) {
 		for (int j = -sampleSize, y = -6.0; j < sampleSize; j++, y += 0.4) {
-			graph1[index].x = -x;
-			graph1[index].z = y;
-			//graph1[index].y = sin(i*i +  j*j);
-			//graph1[index].y = (i +  j)*0.5;
-			graph1[index].y = sqrt(81 - x * x - y * y);
+			graph1[index].x = -i*0.3;
+			graph1[index].z = j*0.3;
+			float d = sqrt(i*i + j * j);
+			if (d == 0.0)
+				d = 1;
+			//graph1[index].y = (sin(d) / d)*10;
+			//graph1[index].y = sin(5 * i)*cos(5 * j)/3;
+			float tem =  (i*i + j * j);
+			/*if (tem == 0) {
+				tem = 1;
+			}*/
+			//graph1[index].y = 10 - abs(j);
+			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
+			//graph1[index].y = (i + j)*0.2;
+			//graph1[index].y = tem * 0.05;
+			graph1[index].y = sqrt(36- (10 - sqrt(tem))*(10 - sqrt(tem)));
 			index++;
 		}
 	}
@@ -168,13 +218,11 @@ void generate()
 	//for triangles
 	int landscape = 2 * sampleSize;
 	index = 0;
-	int j = 0;
+	int j = 0,ni=0;
 	int t = 0;
 
 	for (int k = 0; k < landscape*(landscape - 1); k += landscape) {
-
-
-		for (int i = k; i < k+ landscape -1; i++) {
+		for (int i = k; i < k + landscape - 1; i++) {
 			j = i + 1;
 			t = i + landscape;
 			g1index[index] = i;
@@ -183,6 +231,10 @@ void generate()
 			index++;
 			g1index[index] = t;
 
+			points v1 = graph1[j] - graph1[i], v2 = graph1[t] - graph1[i];
+			points n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+			normals[ni] = n;
+			ni++;
 			index++;
 			g1index[index] = j;
 			index++;
@@ -190,11 +242,19 @@ void generate()
 			index++;
 			g1index[index] = t;
 			index++;
+
+			v1 = graph1[t + 1] - graph1[j]; v2 = graph1[t] - graph1[j];
+			n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+			normals[ni] = n;
+			ni++;
 		}
 		
 
 	}
 	
+	/*for (int i = 0; i < N / 3; i++) {
+		std::cout<< normals[i].x <<", "<<normals[i].y << ", " << normals[i].z << "\t";
+	}*/
 	
 	glGenVertexArrays(1, &vertexArray);
 	glBindVertexArray(vertexArray);
@@ -211,16 +271,15 @@ void generate()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glBindVertexArray(0);
-
-
-	glGenBuffers(1, &bufferGraph2);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph2);
+	glGenBuffers(1, &normalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 	//assign axis_marks data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(graph2), graph2, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
 
-
-	
+	glBindVertexArray(0);
 
 	/*glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);*/
@@ -263,7 +322,6 @@ int main(void)
 
 
 	Shader lightSourceShader("lightVertexShader.vert", "lightFragmentShader.frag");
-
 
 
 	float positionswithTexture[] = {
@@ -312,47 +370,47 @@ int main(void)
 
 
 	float positions[] = {
-	 -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 -0.5f, -0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	-0.5f,  0.5f, -0.5f,  
+	-0.5f, -0.5f, -0.5f,  
 
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f,  0.5f,  
+	-0.5f, -0.5f,  0.5f,  
 
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f,  0.5f,  0.5f,
+	-0.5f,  0.5f, -0.5f,
+	-0.5f, -0.5f, -0.5f,
+	-0.5f, -0.5f, -0.5f,
+	-0.5f, -0.5f,  0.5f,
+	-0.5f,  0.5f,  0.5f,
 
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
 
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f, -0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	 0.5f, -0.5f,  0.5f,  
+	-0.5f, -0.5f,  0.5f,  
+	-0.5f, -0.5f, -0.5f,  
 
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+	-0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f, -0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	 0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f,  0.5f,  
+	-0.5f,  0.5f, -0.5f 
 	};
 	float vertices[] = {
 	 0.5f,  0.5f, 0.0f,  // top right
@@ -379,7 +437,7 @@ int main(void)
 	};
 
 
-	unsigned int VAO, VBO, EBO, lightVAO;
+	unsigned int VAO, VBO, EBO;
 	glGenVertexArrays(1, &VAO);
 
 	glGenBuffers(1, &VBO);
@@ -390,27 +448,28 @@ int main(void)
 
 	//configuring for cube
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	/*glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-
+*/
 	glBindVertexArray(0);
 	
 
 	//configuring for lightcube
+	unsigned int lightVAO;
 	glGenVertexArrays(1, &lightVAO);
 	glBindVertexArray(lightVAO);
+	// we only need to bind to the VBO, the container's VBO's data already contains the data.
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+	// set the vertex attributes (only position data for our lamp)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
-
 
 
 
@@ -427,8 +486,8 @@ int main(void)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);*/
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindVertexArray(0);
 
 	unsigned int texture1, texture2;
 	glGenTextures(1, &texture1);
@@ -522,7 +581,16 @@ int main(void)
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-		glm::vec3 objColor(1.0f, 0.1f, 0.0f);
+		glm::vec3 objColor = glm::vec3(0.0f, 0.8f, 0.5f);
+		MyShader.setVec3("objectColor", objColor);
+		glBindVertexArray(vertexArray);
+		glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+		objColor = glm::vec3(1.0f, 0.8f, 1.0f);
+		MyShader.setVec3("objectColor", objColor);
+		//glDrawElements(GL_LINES, N, GL_UNSIGNED_INT, 0);
+
+		glBindVertexArray(0);
+		objColor = glm::vec3(1.0f, 0.0f, 0.0f);
 		MyShader.setVec3("objectColor", objColor);
 		//binding and drawing axis
 		glBindBuffer(GL_ARRAY_BUFFER, bufferAxis);
@@ -543,20 +611,22 @@ int main(void)
 		//binding and drawing graph
 
 	//	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
-		
-		objColor=glm::vec3(0.0f, 0.8f, 0.5f);
-		MyShader.setVec3("objectColor", objColor);
-		glBindVertexArray(vertexArray);
-		//glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
 
-		objColor = glm::vec3(0.0f, 1.0f, 1.0f);
+		
+
+	/*	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g1Ibuffer);*/
+		objColor = glm::vec3(0.0f, 0.0f, 0.0f);
+		MyShader.setVec3("objectColor", objColor);
+		//glDrawArrays(GL_POINTS, 0, 1);
+	//	glDisableVertexAttribArray(0);
+
+		objColor = glm::vec3(1.0f, 1.0f, 1.0f);
 		MyShader.setVec3("objectColor", objColor);
 		glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		for (int i = 0; i <2*sampleSize; i++) {
-			glDrawArrays(GL_POINTS, i * sampleSize * 2, sampleSize * 2);
+			glDrawArrays(GL_LINE_STRIP, i * sampleSize * 2, sampleSize * 2);
 		}
 		glDisableVertexAttribArray(0);
 
@@ -569,10 +639,13 @@ int main(void)
 		}*/
 		glDisableVertexAttribArray(0);
 
-		glBindVertexArray(VAO);
+		
 		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
 
+		
+		glBindVertexArray(VAO);
 		const float radius = 10.0f;
 		float camX = radius * sin(glfwGetTime());
 		float camZ = radius * cos(glfwGetTime());
@@ -580,38 +653,34 @@ int main(void)
 		view = camera.GetViewMatrix();
 		MyShader.setMat4("view", view);
 
-		int width, height;
-		glfwGetWindowSize(window, &width, &height);
-
 		glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 		MyShader.setMat4("proj", proj);
-		/*angle = (angle + 1) % 360;
-		lightPos.x = sin(glm::radians((float)angle));
-		lightPos.z = cos(glm::radians((float)angle));*/
-
-		//lightPos.y= sin(glfwGetTime() / 2.0f) * 1.0f;
 
 		MyShader.setVec3("lightPos", lightPos);
 		MyShader.setVec3("cameraPos", camera.cameraPos);
 		glm::mat4 model = glm::mat4(1.0f);
 		MyShader.setMat4("model", model);
+		objColor = glm::vec3(0.0f, 1.0f, 1.0f);
+		MyShader.setVec3("objectColor", objColor);
 		//glDrawArrays(GL_TRIANGLES, 0, 36);
 
-
-
+		glBindVertexArray(VAO);
 		lightSourceShader.use();
+		view = camera.GetViewMatrix();
 		lightSourceShader.setMat4("view", view);
+		 proj = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+		MyShader.setMat4("proj", proj);
 		lightSourceShader.setMat4("proj", proj);
-
+		model = glm::mat4(1.0f);
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
 		lightSourceShader.setMat4("model", model);
-		glBindVertexArray(lightVAO);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		//glBindVertexArray(VAO);
+		
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		
