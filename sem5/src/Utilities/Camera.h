@@ -31,7 +31,7 @@ public:
 
 	void KeyboardProcess(CameraMovement direction, float deltime)
 	{
-		const float cameraSpeed = deltime * 8;
+		const float cameraSpeed = deltime * 15;
 		if(direction==FORWARD) cameraPos += cameraFront * cameraSpeed;
 
 		if (direction == BACKWARD) cameraPos -= cameraFront * cameraSpeed;

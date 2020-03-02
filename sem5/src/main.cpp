@@ -17,9 +17,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "Utilities/stb_image.h"
 
-
-
-
+#define N 5400
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -33,7 +31,7 @@ float lastY = 600.0 / 2.0;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 void OpenGLDebugCallback(
-	GLenum source, 
+	GLenum source,
 	GLenum type,
 	GLuint id,
 	GLenum severity,
@@ -58,13 +56,17 @@ glm::vec3 lightPos(1.0f, 0.0f, 1.0f);
 //glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0f);
 
 int graphSize = 20;
-int sampleSize = 10;
+int sampleSize = 15;
 struct points {
 	float x, y, z;
 };
+//{12, 13, 30, 13, 31, 30, 13, 14, 31, 14, 32, 31, 14, 15, 32, 15, 33, 32}
 
-points axis[6],axisMarks[600],graph1[400], graph2[400];
-unsigned int bufferAxis,bufferMarks,bufferGraph1, bufferGraph2;
+points axis[6], axisMarks[600], graph1[1800], graph2[400], graph1Tri[400];
+int triNum = (sampleSize*2-1) *6* 2*sampleSize;
+//unsigned int* g1index = new unsigned int[triNum];
+unsigned int g1index[N] = { 0};
+unsigned int bufferAxis, bufferMarks, bufferGraph1, bufferGraph2, g1buffer,g1Ibuffer,vertexArray;
 
 void generate()
 {
@@ -91,42 +93,42 @@ void generate()
 	axis[5].y = 0;
 	axis[5].z = -graphSize;
 
-	 //axis marks
-    int i;
-    int index = 0;
-    //x
-    for( i = -graphSize; i < graphSize; i++ ) {
-       axisMarks[index].x = i;
-       axisMarks[index].y = -0.2;
-       axisMarks[index].z = 0;
-        index++;
-       axisMarks[index].x = i;
-       axisMarks[index].y = 0.2;
-       axisMarks[index].z = 0;
-        index++;
-    }
-    //y
-    for( i = -graphSize; i < graphSize; i ++) {
-       axisMarks[index].x = -0.2;
-       axisMarks[index].y = i;
-       axisMarks[index].z = 0;
-        index++;
-       axisMarks[index].x = 0.2;
-       axisMarks[index].y = i;
-       axisMarks[index].z = 0;
-        index++;
-    }
-    //z
-    for( i = -graphSize; i < graphSize; i ++) {
-       axisMarks[index].x = 0;
-       axisMarks[index].y = -0.2;
-       axisMarks[index].z = i;
-        index++;
-       axisMarks[index].x = 0;
-       axisMarks[index].y = 0.2;
-       axisMarks[index].z = i;
-        index++;
-    }
+	//axis marks
+	int i;
+	int index = 0;
+	//x
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = i;
+		axisMarks[index].y = -0.2;
+		axisMarks[index].z = 0;
+		index++;
+		axisMarks[index].x = i;
+		axisMarks[index].y = 0.2;
+		axisMarks[index].z = 0;
+		index++;
+	}
+	//y
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = -0.2;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0;
+		index++;
+		axisMarks[index].x = 0.2;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0;
+		index++;
+	}
+	//z
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = -0.2;
+		axisMarks[index].z = i;
+		index++;
+		axisMarks[index].x = 0;
+		axisMarks[index].y = 0.2;
+		axisMarks[index].z = i;
+		index++;
+	}
 	//for axis
 	glGenBuffers(1, &bufferAxis);
 	glBindBuffer(GL_ARRAY_BUFFER, bufferAxis);
@@ -140,38 +142,88 @@ void generate()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(axisMarks), axisMarks, GL_STATIC_DRAW);
 
 	index = 0;
-	for (int i = -sampleSize; i < sampleSize; i++) {
-		for (int j = -sampleSize; j < sampleSize; j++) {
-			graph1[index].x = i;
-			graph1[index].z = j;
-			graph1[index].y = (i*i-j*j) ;
-
+	float x, y;
+	for (int i = -sampleSize,x=-6.0; i < sampleSize; i++, x += 0.4) {
+		for (int j = -sampleSize,y=-6.0; j < sampleSize; j++,y+=0.4) {
+			graph1[index].x = x;
+			graph1[index].z = y;
+			//graph1[index].y = sin(i*i +  j*j);
+			//graph1[index].y = (i +  j)*0.5;
+			graph1[index].y = sqrt(81-x*x - y * y);
 			index++;
 		}
 	}
 
+	for (int i = -sampleSize, x = -6.0; i < sampleSize; i++, x += 0.4) {
+		for (int j = -sampleSize, y = -6.0; j < sampleSize; j++, y += 0.4) {
+			graph1[index].x = -x;
+			graph1[index].z = y;
+			//graph1[index].y = sin(i*i +  j*j);
+			//graph1[index].y = (i +  j)*0.5;
+			graph1[index].y = sqrt(81 - x * x - y * y);
+			index++;
+		}
+	}
+
+	//for triangles
+	int landscape = 2 * sampleSize;
 	index = 0;
-	for (int i = -sampleSize; i < sampleSize; i++) {
-		for (int j = -sampleSize; j < sampleSize; j++) {
-			graph2[index].x = j;
-			graph2[index].z = i;
-			graph2[index].y = (i*i -j * j);
+	int j = 0;
+	int t = 0;
+
+	for (int k = 0; k < landscape*(landscape - 1); k += landscape) {
+
+
+		for (int i = k; i < k+ landscape -1; i++) {
+			j = i + 1;
+			t = i + landscape;
+			g1index[index] = i;
+			index++;
+			g1index[index] = j;
+			index++;
+			g1index[index] = t;
 
 			index++;
+			g1index[index] = j;
+			index++;
+			g1index[index] = t + 1;
+			index++;
+			g1index[index] = t;
+			index++;
 		}
-	}
+		
 
+	}
+	
+	
+	glGenVertexArrays(1, &vertexArray);
+	glBindVertexArray(vertexArray);
 	//assign graph data
 	glGenBuffers(1, &bufferGraph1);
 	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
 	//assign axis_marks data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(graph1), graph1, GL_STATIC_DRAW);
 
+	glGenBuffers(1, &g1Ibuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g1Ibuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g1index), g1index, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
+
+
 	glGenBuffers(1, &bufferGraph2);
 	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph2);
 	//assign axis_marks data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(graph2), graph2, GL_STATIC_DRAW);
 
+
+	
+
+	/*glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);*/
 
 }
 
@@ -204,7 +256,7 @@ int main(void)
 	if (glewInit() != GLEW_OK)
 		std::cout << "Error occurred" << std::endl;
 
-	
+
 	Shader MyShader("vertexShader.vert", "fragmentShader.frag");
 
 	generate();
@@ -213,9 +265,6 @@ int main(void)
 	Shader lightSourceShader("lightVertexShader.vert", "lightFragmentShader.frag");
 
 
-
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);
 
 	float positionswithTexture[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -330,39 +379,42 @@ int main(void)
 	};
 
 
-	unsigned int VAO, VBO,EBO,lightVAO;
+	unsigned int VAO, VBO, EBO, lightVAO;
 	glGenVertexArrays(1, &VAO);
-	
+
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 
 	glBindVertexArray(VAO);
-	
+
 
 	//configuring for cube
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 	glEnableVertexAttribArray(0);
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	glBindVertexArray(0);
+	
 
 	//configuring for lightcube
 	glGenVertexArrays(1, &lightVAO);
 	glBindVertexArray(lightVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,6 * sizeof(float), (void *)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
 	glEnableVertexAttribArray(0);
 
 
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	
 
-	
+
+
 	const unsigned char* vendor = glGetString(GL_VENDOR);
 	const unsigned char* render = glGetString(GL_RENDERER);
 
@@ -378,9 +430,9 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	unsigned int texture1,texture2;
+	unsigned int texture1, texture2;
 	glGenTextures(1, &texture1);
-	
+
 	int width, height, nrChannels;
 	//texture1
 	stbi_set_flip_vertically_on_load(true);
@@ -420,7 +472,7 @@ int main(void)
 	}
 	stbi_image_free(data);
 
-	
+
 
 	/*glm::mat4 view = glm::mat4(1.0f);
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0));
@@ -428,28 +480,29 @@ int main(void)
 
 	glfwSwapInterval(1);
 
-	int move = 2,by=10;
+	int move = 2, by = 10;
 	MyShader.use();
 	/*MyShader.setInt("texture1", 0);
 	MyShader.setInt("texture2", 1);*/
-	glm::vec3 objColor(1.0f, 0.1f, 0.0f);
-	glm::vec3 lightColor(1.0f, 1.0f,1.0f);
+	
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
-	MyShader.setVec3("objectColor",objColor);
 	MyShader.setVec3("lightColor", lightColor);
-	
-	
 
 
 
-	
+
+
+
 	/*unsigned int viewloc = glGetUniformLocation(MyShader.ID, "view");
 	glUniformMatrix4fv(viewloc, 1, GL_FALSE, glm::value_ptr(view));
 	unsigned int projloc = glGetUniformLocation(MyShader.ID, "proj");*/
 
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	int angle = 0;
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -463,13 +516,14 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		MyShader.use();
-
+		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-
+		glm::vec3 objColor(1.0f, 0.1f, 0.0f);
+		MyShader.setVec3("objectColor", objColor);
 		//binding and drawing axis
 		glBindBuffer(GL_ARRAY_BUFFER, bufferAxis);
 		glEnableVertexAttribArray(0);
@@ -487,23 +541,37 @@ int main(void)
 
 
 		//binding and drawing graph
+
+	//	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
+		
+		objColor=glm::vec3(0.0f, 0.8f, 0.5f);
+		MyShader.setVec3("objectColor", objColor);
+		glBindVertexArray(vertexArray);
+		//glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		objColor = glm::vec3(0.0f, 1.0f, 1.0f);
+		MyShader.setVec3("objectColor", objColor);
 		glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		for (int i = 0; i < sampleSize; i++) {
-			glDrawArrays(GL_LINE_STRIP, i * sampleSize*2, sampleSize*2);
+		for (int i = 0; i <2*sampleSize; i++) {
+			glDrawArrays(GL_POINTS, i * sampleSize * 2, sampleSize * 2);
 		}
 		glDisableVertexAttribArray(0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, bufferGraph2);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		for (int i = 0; i < sampleSize; i++) {
+		/*for (int i = 0; i < sampleSize; i++) {
 			glDrawArrays(GL_LINE_STRIP, i * sampleSize * 2, sampleSize * 2);
-		}
+
+		}*/
 		glDisableVertexAttribArray(0);
 
 		glBindVertexArray(VAO);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 
 		const float radius = 10.0f;
 		float camX = radius * sin(glfwGetTime());
@@ -515,7 +583,7 @@ int main(void)
 		int width, height;
 		glfwGetWindowSize(window, &width, &height);
 
-		glm::mat4 proj =  glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 		MyShader.setMat4("proj", proj);
 		/*angle = (angle + 1) % 360;
 		lightPos.x = sin(glm::radians((float)angle));
@@ -543,23 +611,11 @@ int main(void)
 		//glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
-
-		//for (int i = 0; i < 10; i++) {
-		//	glm::mat4 model = glm::mat4(1.0f);
-		//	model = glm::translate(model, cubePositions[i]);
-		//	//float angle = 20.0f*(i+1)*(float)glfwGetTime();
-		//	float angle = 0.0f;
-		//	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		//	MyShader.setMat4("model", model);
-		//	glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		//}
-		
+		glBindVertexArray(0);
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	
-	
+		
+
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 
@@ -568,6 +624,7 @@ int main(void)
 	}
 
 	glfwTerminate();
+//	delete[] g1index;
 	return 0;
 }
 
@@ -588,7 +645,7 @@ void processInput(GLFWwindow *window)
 
 
 
-	
+
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
