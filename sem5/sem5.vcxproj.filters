@@ -34,11 +34,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vertexShader.vert" />
-    <None Include="fragmentShader.frag" />
+    <None Include="shaders\fragmentShader.frag" />
+    <None Include="shaders\vertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="lightVertexShader.vert" />
-    <Text Include="lightFragmentShader.frag" />
+    <Text Include="shaders\lightFragmentShader.frag" />
+    <Text Include="shaders\lightVertexShader.vert" />
   </ItemGroup>
 </Project>
