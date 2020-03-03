@@ -19,9 +19,10 @@
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include "Utilities/stb_image.h"
-
+ 
 #define N 9126
 #define PI 3.1415
+#define A 700
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -83,7 +84,7 @@ public:
 };
 //{12, 13, 30, 13, 31, 30, 13, 14, 31, 14, 32, 31, 14, 15, 32, 15, 33, 32}
 //normals = N/3
-points axis[6], axisMarks[600], graph1[1800], graph2[400],normals[3042];
+points axis[6], axisMarks[A], graph1[1800], graph2[400],normals[3042];
 int triNum = (sampleSize*2) *6* 2*sampleSize;
 //unsigned int* g1index = new unsigned int[triNum];
 unsigned int g1index[N] = { 0}, wireframe[N] = { 0 };
@@ -128,6 +129,17 @@ void generate()
 		axisMarks[index].z = 0;
 		index++;
 	}
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = i;
+		axisMarks[index].y = 0.0;
+		axisMarks[index].z = 0.0;
+		index++;
+		axisMarks[index].x = i - 0.8;
+		axisMarks[index].y = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
+		index++;
+
+	}
 	//y
 	for (i = -graphSize; i < graphSize; i++) {
 		axisMarks[index].x = -0.2;
@@ -139,6 +151,18 @@ void generate()
 		axisMarks[index].z = 0;
 		index++;
 	}
+
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0.0;
+		index++;
+		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].y = i-0.8;
+		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
+		index++;
+
+	}
 	//z
 	for (i = -graphSize; i < graphSize; i++) {
 		axisMarks[index].x = 0;
@@ -149,6 +173,18 @@ void generate()
 		axisMarks[index].y = 0.2;
 		axisMarks[index].z = i;
 		index++;
+	}
+
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = 0;
+		axisMarks[index].z = i;
+		index++;
+		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].y = 0.3*sin(glm::radians((float)a));
+		axisMarks[index].z = i-0.8;
+		index++;
+
 	}
 	//for axis
 	glGenBuffers(1, &bufferAxis);
@@ -188,9 +224,9 @@ void generate()
 			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
 
 			//graph1[index].y = (i + j)*0.2;
-			//graph1[index].y = tem*0.05;
+			graph1[index].y = tem*0.008;
 			//graph1[index].y = pow(tem , 0.5);
-			graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
+			//graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
 
 			index++;
 		}
@@ -212,8 +248,8 @@ void generate()
 			//graph1[index].y = 10 - abs(j);
 			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
 			//graph1[index].y = (i + j)*0.2;
-			//graph1[index].y = tem * 0.05;
-			graph1[index].y = sqrt(36- (10 - sqrt(tem))*(10 - sqrt(tem)));
+			graph1[index].y = tem * 0.008;
+			//graph1[index].y = sqrt(36- (10 - sqrt(tem))*(10 - sqrt(tem)));
 			index++;
 		}
 	}
@@ -311,7 +347,7 @@ int main(void)
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 
 
@@ -319,12 +355,12 @@ int main(void)
 		std::cout << "Error occurred" << std::endl;
 
 
-	Shader MyShader("vertexShader.vert", "fragmentShader.frag");
+	Shader MyShader("shaders/vertexShader.vert", "shaders/fragmentShader.frag");
 
 	generate();
 
 
-	Shader lightSourceShader("lightVertexShader.vert", "lightFragmentShader.frag");
+	Shader lightSourceShader("shaders/lightVertexShader.vert", "shaders/lightFragmentShader.frag");
 
 
 	float positionswithTexture[] = {
@@ -598,7 +634,14 @@ int main(void)
 		glm::vec3 objColor = glm::vec3(0.0f, 0.8f, 0.5f);
 		MyShader.setVec3("objectColor", objColor);
 		glBindVertexArray(vertexArray);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		objColor = glm::vec3(0.0f, 0.0f, 0.0f);
+		MyShader.setVec3("objectColor", objColor);
+		//glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
 		objColor = glm::vec3(1.0f, 0.8f, 1.0f);
 		MyShader.setVec3("objectColor", objColor);
 		//glDrawElements(GL_LINES, N, GL_UNSIGNED_INT, 0);
@@ -617,7 +660,7 @@ int main(void)
 		glBindBuffer(GL_ARRAY_BUFFER, bufferMarks);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glDrawArrays(GL_LINES, 0, 600);
+		glDrawArrays(GL_LINES, 0, A);
 		glDisableVertexAttribArray(0);
 
 
@@ -640,7 +683,7 @@ int main(void)
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		for (int i = 0; i <2*sampleSize; i++) {
-			glDrawArrays(GL_LINE_STRIP, i * sampleSize * 2, sampleSize * 2);
+			//glDrawArrays(GL_LINE_STRIP, i * sampleSize * 2, sampleSize * 2);
 		}
 		glDisableVertexAttribArray(0);
 
@@ -765,15 +808,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		lastY = ypos;
 		firstMouse = false;
 	}
-	GLFWcursor* cursor = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
-	glfwSetCursor(window, cursor);
-
 	float xoffset = xpos - lastX;
 	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 	lastX = xpos;
 	lastY = ypos;
+	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	if (state == GLFW_PRESS) {
+		
+		GLFWcursor* cursor = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
+		glfwSetCursor(window, cursor);
 
-	camera.MouseProcess(xoffset, yoffset);
+		camera.MouseProcess(xoffset, yoffset);
+	}
+	
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
