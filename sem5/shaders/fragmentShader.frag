@@ -22,7 +22,7 @@ void main()
 	//vec3 norm ={-0.6,0.9,-0.6};
 	vec3 norm =7.5*Normal;
 	vec3 lightDir = normalize(lightPos - FragPos);  
-	float diff = max(dot(norm, lightDir), 0.4);
+	float diff = max(dot(norm, lightDir), 0.2);
 	vec3 diffuse = diff * lightColor;
 	vec3 viewDir = normalize(cameraPos-FragPos);
 	vec3 reflectDir = reflect(-lightDir , norm);

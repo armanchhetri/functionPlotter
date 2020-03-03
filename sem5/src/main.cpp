@@ -62,7 +62,7 @@ glm::vec3 lightPos(10.0f, 10.0f, -10.0f);
 //glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0f);
 //glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0f);
 
-int graphSize = 20;
+int graphSize = 15;
 int sampleSize = 20;
 struct points {
 	float x, y, z;
@@ -498,6 +498,7 @@ int main(void)
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
 		lightSourceShader.setMat4("model", model);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
@@ -629,7 +630,7 @@ void generate()
 
 	
 	//for triangles
-	createFunction(5);
+	createFunction(11);
 
 	/*glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);*/
@@ -756,6 +757,14 @@ void createFunction(int f)
 
 			case 9: graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
 				break;
+
+			case 10:graph1[index].y = cos(abs(i) + abs(j));
+				break;
+
+			case 11:graph1[index].y = (sin(4 * i) - cos(5 * j))/5;
+				break;
+				
+
 			}
 
 
@@ -800,6 +809,13 @@ void createFunction(int f)
 
 			case 9: graph1[index].y = sqrt(36 - (10 - sqrt(tem))*(10 - sqrt(tem)));
 				break;
+
+			case 10:graph1[index].y = cos(abs(i) + abs(j));
+				break;
+
+			case 11:graph1[index].y = (sin(4 * i) - cos(5 * j))/5;
+				break;
+
 			}
 			index++;
 		}
