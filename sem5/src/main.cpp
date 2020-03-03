@@ -20,11 +20,16 @@
 #define N 9126
 #define PI 3.1415
 #define A 700
+int function = 1;
+int wire =0;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void generate();
+void createAxisMarks();
+void createFunction(int f);
 
 bool firstMouse = true;
 float lastX = 800.0f / 2.0;
@@ -86,242 +91,6 @@ int triNum = (sampleSize*2) *6* 2*sampleSize;
 //unsigned int* g1index = new unsigned int[triNum];
 unsigned int g1index[N] = { 0}, wireframe[N] = { 0 };
 unsigned int bufferAxis, bufferMarks, bufferGraph1, bufferGraph2, wireframeBuffer,g1Ibuffer,vertexArray,normalBuffer;
-
-void generate()
-{
-	//axis lines
-   //x
-	axis[0].x = -graphSize;
-	axis[0].y = 0;
-	axis[0].z = 0;
-	axis[1].x = graphSize;
-	axis[1].y = 0;
-	axis[1].z = 0;
-	//y
-	axis[2].x = 0;
-	axis[2].y = -graphSize;
-	axis[2].z = 0;
-	axis[3].x = 0;
-	axis[3].y = graphSize;
-	axis[3].z = 0;
-	//z
-	axis[4].x = 0;
-	axis[4].y = 0;
-	axis[4].z = graphSize;
-	axis[5].x = 0;
-	axis[5].y = 0;
-	axis[5].z = -graphSize;
-
-	//axis marks
-	int i;
-	int index = 0;
-	//x
-	for (i = -graphSize; i < graphSize; i++) {
-		axisMarks[index].x = i;
-		axisMarks[index].y = -0.2;
-		axisMarks[index].z = 0;
-		index++;
-		axisMarks[index].x = i;
-		axisMarks[index].y = 0.2;
-		axisMarks[index].z = 0;
-		index++;
-	}
-	for (int a = 0; a < 360; a += 5) {
-		axisMarks[index].x = i;
-		axisMarks[index].y = 0.0;
-		axisMarks[index].z = 0.0;
-		index++;
-		axisMarks[index].x = i - 0.8;
-		axisMarks[index].y = 0.3*cos(glm::radians((float)a));
-		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
-		index++;
-
-	}
-	//y
-	for (i = -graphSize; i < graphSize; i++) {
-		axisMarks[index].x = -0.2;
-		axisMarks[index].y = i;
-		axisMarks[index].z = 0;
-		index++;
-		axisMarks[index].x = 0.2;
-		axisMarks[index].y = i;
-		axisMarks[index].z = 0;
-		index++;
-	}
-
-	for (int a = 0; a < 360; a += 5) {
-		axisMarks[index].x = 0;
-		axisMarks[index].y = i;
-		axisMarks[index].z = 0.0;
-		index++;
-		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
-		axisMarks[index].y = i-0.8;
-		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
-		index++;
-
-	}
-	//z
-	for (i = -graphSize; i < graphSize; i++) {
-		axisMarks[index].x = 0;
-		axisMarks[index].y = -0.2;
-		axisMarks[index].z = i;
-		index++;
-		axisMarks[index].x = 0;
-		axisMarks[index].y = 0.2;
-		axisMarks[index].z = i;
-		index++;
-	}
-
-	for (int a = 0; a < 360; a += 5) {
-		axisMarks[index].x = 0;
-		axisMarks[index].y = 0;
-		axisMarks[index].z = i;
-		index++;
-		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
-		axisMarks[index].y = 0.3*sin(glm::radians((float)a));
-		axisMarks[index].z = i-0.8;
-		index++;
-
-	}
-	//for axis
-	glGenBuffers(1, &bufferAxis);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferAxis);
-	//assign axis data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(axis), axis, GL_STATIC_DRAW);
-
-	//for axis marks
-	glGenBuffers(1, &bufferMarks);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferMarks);
-	//assign axis_marks data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(axisMarks), axisMarks, GL_STATIC_DRAW);
-
-	index = 0;
-	float x, y;
-	for (int i = -sampleSize,x=-PI; i < sampleSize; i++, x += 0.209) {
-		for (int j = -sampleSize,y= -PI; j < sampleSize; j++,y+= 0.1047) {
-			/*graph1[index].x = 4*cos(x)*sin(y);
-			graph1[index].z = 4*sin(x)*sin(y);*/
-			//graph1[index].x = 4 * cos(x);
-			//graph1[index].z = 4 * sin(x);
-			//graph1[index].y = sin(i*i +  j*j);
-
-			graph1[index].x = i*0.3;
-			graph1[index].z =j*0.3;
-			float d = sqrt  (i*i + j * j);
-			if (d == 0.0)
-				d = 1;
-
-			//graph1[index].y = (sin(d) / d)*10;
-			//graph1[index].y = sin(5*i)*cos(5*j)/3;
-			float tem = (i*i + j * j);
-			/*if (tem == 0) {
-				tem = 1;
-			}*/
-			//graph1[index].y = 10 - abs(j);
-			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
-
-			//graph1[index].y = (i + j)*0.2;
-			graph1[index].y = tem*0.008;
-			//graph1[index].y = pow(tem , 0.5);
-			//graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
-
-			index++;
-		}
-	}
-
-	for (int i = -sampleSize, x = -6.0; i < sampleSize; i++, x += 0.4) {
-		for (int j = -sampleSize, y = -6.0; j < sampleSize; j++, y += 0.4) {
-			graph1[index].x = -i*0.3;
-			graph1[index].z = j*0.3;
-			float d = sqrt(i*i + j * j);
-			if (d == 0.0)
-				d = 1;
-			//graph1[index].y = (sin(d) / d)*10;
-			//graph1[index].y = sin(5 * i)*cos(5 * j)/3;
-			float tem =  (i*i + j * j);
-			/*if (tem == 0) {
-				tem = 1;
-			}*/
-			//graph1[index].y = 10 - abs(j);
-			//graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
-			//graph1[index].y = (i + j)*0.2;
-			graph1[index].y = tem * 0.008;
-			//graph1[index].y = sqrt(36- (10 - sqrt(tem))*(10 - sqrt(tem)));
-			index++;
-		}
-	}
-
-	//for triangles
-	int landscape = 2 * sampleSize;
-	index = 0;
-	int j = 0,ni=0;
-	int t = 0;
-
-	for (int k = 0; k < landscape*(landscape - 1); k += landscape) {
-		for (int i = k; i < k + landscape - 1; i++) {
-			j = i + 1;
-			t = i + landscape;
-			g1index[index] = i;
-			index++;
-			g1index[index] = j;
-			index++;
-			g1index[index] = t;
-
-			points v1 = graph1[j] - graph1[i], v2 = graph1[t] - graph1[i];
-			points n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
-			normals[ni] = n;
-			ni++;
-			index++;
-			g1index[index] = j;
-			index++;
-			g1index[index] = t + 1;
-			index++;
-			g1index[index] = t;
-			index++;
-
-			v1 = graph1[t + 1] - graph1[j]; v2 = graph1[t] - graph1[j];
-			n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
-			normals[ni] = n;
-			ni++;
-		}
-		
-
-	}
-	
-	/*for (int i = 0; i < N / 3; i++) {
-		std::cout<< normals[i].x <<", "<<normals[i].y << ", " << normals[i].z << "\t";
-	}*/
-	
-	glGenVertexArrays(1, &vertexArray);
-	glBindVertexArray(vertexArray);
-	//assign graph data
-	glGenBuffers(1, &bufferGraph1);
-	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
-	//assign axis_marks data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(graph1), graph1, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &g1Ibuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g1Ibuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g1index), g1index, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glGenBuffers(1, &normalBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	//assign axis_marks data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(0);
-
-	/*glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);*/
-
-}
-
 
 
 int main(void)
@@ -617,19 +386,29 @@ int main(void)
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-		glm::vec3 objColor = glm::vec3(0.0f, 0.8f, 0.5f);
-		MyShader.setVec3("objectColor", objColor);
+		glm::vec3 objColor = glm::vec3(0.9f, 0.3f, 0.6f);
 		glBindVertexArray(vertexArray);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
-
-
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		objColor = glm::vec3(0.0f, 0.0f, 0.0f);
-		MyShader.setVec3("objectColor", objColor);
-		//glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
-		objColor = glm::vec3(1.0f, 0.8f, 1.0f);
-		MyShader.setVec3("objectColor", objColor);
+		if (wire == 0) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			//objColor = glm::vec3(0.9f, 0.3f, 0.6f);
+			MyShader.setVec3("objectColor", objColor);
+			glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+		}
+		if (wire==1) {
+			//objColor = glm::vec3(0.9f, 0.3f, 0.6f);
+			MyShader.setVec3("objectColor", objColor);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			objColor = glm::vec3(0.0f, 0.0f, 0.0f);
+			MyShader.setVec3("objectColor", objColor);
+			glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+		}
+		if(wire==2) {
+			MyShader.setVec3("objectColor", objColor);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glDrawElements(GL_TRIANGLES, N, GL_UNSIGNED_INT, 0);
+		}
 		//glDrawElements(GL_LINES, N, GL_UNSIGNED_INT, 0);
 
 		glBindVertexArray(0);
@@ -754,8 +533,16 @@ void processInput(GLFWwindow *window)
 		camera.KeyboardProcess(LEFT, delTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.KeyboardProcess(RIGHT, delTime);
-
-
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		createFunction(function);
+		function = (function + 1) % 9;
+	}
+	if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+		wire = (wire + 1) % 3;
+	}
+		
+		
 
 
 }
@@ -768,8 +555,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		lastY = ypos;
 		firstMouse = false;
 	}
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	float xoffset = -xpos + lastX;
+	float yoffset = -lastY + ypos; // reversed since y-coordinates go from bottom to top
 	lastX = xpos;
 	lastY = ypos;
 	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
@@ -794,4 +581,290 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+void generate()
+{
+	//axis lines
+   //x
+	axis[0].x = -graphSize;
+	axis[0].y = 0;
+	axis[0].z = 0;
+	axis[1].x = graphSize;
+	axis[1].y = 0;
+	axis[1].z = 0;
+	//y
+	axis[2].x = 0;
+	axis[2].y = -graphSize;
+	axis[2].z = 0;
+	axis[3].x = 0;
+	axis[3].y = graphSize;
+	axis[3].z = 0;
+	//z
+	axis[4].x = 0;
+	axis[4].y = 0;
+	axis[4].z = graphSize;
+	axis[5].x = 0;
+	axis[5].y = 0;
+	axis[5].z = -graphSize;
+
+	//axis marks
+	int i;
+	int index = 0;
+	
+	//creating axis marks
+		//for axis
+
+	createAxisMarks();
+	glGenBuffers(1, &bufferAxis);
+	glBindBuffer(GL_ARRAY_BUFFER, bufferAxis);
+	//assign axis data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(axis), axis, GL_STATIC_DRAW);
+
+	//for axis marks
+	glGenBuffers(1, &bufferMarks);
+	glBindBuffer(GL_ARRAY_BUFFER, bufferMarks);
+	//assign axis_marks data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(axisMarks), axisMarks, GL_STATIC_DRAW);
+
+	
+	//for triangles
+	createFunction(5);
+
+	/*glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback((GLDEBUGPROC)OpenGLDebugCallback, 0);*/
+
+}
+
+
+void createAxisMarks() {
+	int i;
+	int index = 0;
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = i;
+		axisMarks[index].y = -0.2;
+		axisMarks[index].z = 0;
+		index++;
+		axisMarks[index].x = i;
+		axisMarks[index].y = 0.2;
+		axisMarks[index].z = 0;
+		index++;
+
+
+	}
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = i;
+		axisMarks[index].y = 0.0;
+		axisMarks[index].z = 0.0;
+		index++;
+		axisMarks[index].x = i - 0.8;
+		axisMarks[index].y = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
+		index++;
+
+	}
+	//y
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = -0.2;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0;
+		index++;
+		axisMarks[index].x = 0.2;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0;
+		index++;
+	}
+
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = i;
+		axisMarks[index].z = 0.0;
+		index++;
+		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].y = i - 0.8;
+		axisMarks[index].z = 0.3*sin(glm::radians((float)a));
+		index++;
+
+	}
+	//z
+	for (i = -graphSize; i < graphSize; i++) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = -0.2;
+		axisMarks[index].z = i;
+		index++;
+		axisMarks[index].x = 0;
+		axisMarks[index].y = 0.2;
+		axisMarks[index].z = i;
+		index++;
+	}
+
+	for (int a = 0; a < 360; a += 5) {
+		axisMarks[index].x = 0;
+		axisMarks[index].y = 0;
+		axisMarks[index].z = i;
+		index++;
+		axisMarks[index].x = 0.3*cos(glm::radians((float)a));
+		axisMarks[index].y = 0.3*sin(glm::radians((float)a));
+		axisMarks[index].z = i - 0.8;
+		index++;
+
+	}
+
+}
+
+void createFunction(int f)
+{
+	int index = 0;
+	float x, y;
+	for (int i = -sampleSize, x = -PI; i < sampleSize; i++, x += 0.209) {
+		for (int j = -sampleSize, y = -PI; j < sampleSize; j++, y += 0.1047) {
+			graph1[index].x = i * 0.3;
+			graph1[index].z = j * 0.3;
+
+			float d = sqrt(i*i + j * j);
+			if (d == 0.0)
+				d = 1;
+
+			//graph1[index].y = sin(5*i)*cos(5*j)/3;
+			float tem = (i*i + j * j);
+			switch (f)
+			{
+			case 1:graph1[index].y = (i + j)*0.2;//plane
+				break;
+
+			case 2:graph1[index].y = tem * 0.008;//flatter parabola
+				break;
+				
+			case 3: graph1[index].y = (sin(d) / d)*10;
+				break;
+
+			case 4:graph1[index].y = sin(i*i + j * j);
+				break;
+
+			case 5:
+				graph1[index].y = abs(i) - abs(j);
+
+				break;
+
+			case 6: graph1[index].y = 10 - abs(j);
+				break;
+			case 7: graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
+				break;
+
+			case 8: graph1[index].y = pow(tem , 0.5)*0.5;
+				break;
+
+			case 9: graph1[index].y = sqrt(36 - (10- sqrt(tem))*(10- sqrt(tem)));
+				break;
+			}
+
+
+			index++;
+		}
+	}
+
+	for (int i = -sampleSize, x = -6.0; i < sampleSize; i++, x += 0.4) {
+		for (int j = -sampleSize, y = -6.0; j < sampleSize; j++, y += 0.4) {
+			graph1[index].x = -i * 0.3;
+			graph1[index].z = j * 0.3;
+			float d = sqrt(i*i + j * j);
+			if (d == 0.0)
+				d = 1;
+			float tem = (i*i + j * j);
+			switch (f)
+			{
+			case 1:graph1[index].y = (i + j)*0.2;//plane
+				break;
+
+			case 2:graph1[index].y = tem * 0.008;//flatter parabola
+				break;
+
+			case 3: graph1[index].y = (sin(d) / d) * 10;
+				break;
+
+			case 4:graph1[index].y = sin(i*i + j * j);
+				break;
+
+			case 5:
+				graph1[index].y = abs(i)-abs(j);
+
+				break;
+
+			case 6: graph1[index].y = 10 - abs(j);
+				break;
+			case 7: graph1[index].y = 1.75 / exp((i * 5)*(i * 5) * (j * 5)*(j * 5));
+				break;
+
+			case 8: graph1[index].y = pow(tem, 0.5)*0.5;
+				break;
+
+			case 9: graph1[index].y = sqrt(36 - (10 - sqrt(tem))*(10 - sqrt(tem)));
+				break;
+			}
+			index++;
+		}
+	}
+
+	int landscape = 2 * sampleSize;
+	index = 0;
+	int j = 0, ni = 0;
+	int t = 0;
+
+	for (int k = 0; k < landscape*(landscape - 1); k += landscape) {
+		for (int i = k; i < k + landscape - 1; i++) {
+			j = i + 1;
+			t = i + landscape;
+			g1index[index] = i;
+			index++;
+			g1index[index] = j;
+			index++;
+			g1index[index] = t;
+
+			points v1 = graph1[j] - graph1[i], v2 = graph1[t] - graph1[i];
+			points n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+			normals[ni] = n;
+			ni++;
+			index++;
+			g1index[index] = j;
+			index++;
+			g1index[index] = t + 1;
+			index++;
+			g1index[index] = t;
+			index++;
+
+			v1 = graph1[t + 1] - graph1[j]; v2 = graph1[t] - graph1[j];
+			n = { v2.z*v1.y - v2.y*v1.z, v2.x*v1.z - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x };
+			normals[ni] = n;
+			ni++;
+		}
+
+
+	}
+
+
+	glGenVertexArrays(1, &vertexArray);
+	glBindVertexArray(vertexArray);
+	//assign graph data
+	glGenBuffers(1, &bufferGraph1);
+	glBindBuffer(GL_ARRAY_BUFFER, bufferGraph1);
+	//assign axis_marks data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(graph1), graph1, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &g1Ibuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g1Ibuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g1index), g1index, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glGenBuffers(1, &normalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	//assign axis_marks data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+
 }
